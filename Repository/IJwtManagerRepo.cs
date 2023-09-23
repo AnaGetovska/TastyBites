@@ -3,7 +3,7 @@ using TastyBytesReact.Models.Responses;
 
 namespace TastyBytesReact.Repository
 {
-    public interface IJwtManagerRepository
+    public interface IJwtManagerRepo
     {
         TokenResponse Authenticate(LoginRequest user);
     }

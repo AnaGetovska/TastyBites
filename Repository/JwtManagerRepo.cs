@@ -7,7 +7,7 @@ using TastyBytesReact.Models.Responses;
 
 namespace TastyBytesReact.Repository
 {
-    public class JwtManagerRepository : IJwtManagerRepository
+    public class JwtManagerRepo : IJwtManagerRepo
     {
         private readonly IConfiguration configuration;
         Dictionary<string, string> UserRecords = new Dictionary<string, string>{
@@ -19,7 +19,7 @@ namespace TastyBytesReact.Repository
             { "user6", "password6"},
         };
 
-        public JwtManagerRepository(IConfiguration configuration) {
+        public JwtManagerRepo(IConfiguration configuration) {
          this.configuration = configuration;
         }
         public TokenResponse Authenticate(LoginRequest user)

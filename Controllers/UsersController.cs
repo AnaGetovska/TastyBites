@@ -12,8 +12,8 @@ namespace TastyBytesReact.Controllers
     [Authorize]
     public class UsersController : ControllerBase
     {
-        private readonly IJwtManagerRepository _jwtManagerRepository;
-        public UsersController(IJwtManagerRepository jwtManagerRepository)
+        private readonly IJwtManagerRepo _jwtManagerRepository;
+        public UsersController(IJwtManagerRepo jwtManagerRepository)
         {
             _jwtManagerRepository = jwtManagerRepository;
         }

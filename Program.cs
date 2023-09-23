@@ -1,8 +1,12 @@
 
+using ArangoDBNetStandard;
+using ArangoDBNetStandard.Transport.Http;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TastyBytesReact.Repository;
+using TastyBytesReact.Repository.Arango;
 
 namespace TastyBytesReact
 {
@@ -16,9 +20,22 @@ namespace TastyBytesReact
 
             builder.Services.AddControllersWithViews();
 
-            var Configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+            var Configuration = new ConfigurationBuilder().AddEnvironmentVariables("TB").AddJsonFile("appsettings.json").Build();
             builder.Services.AddSingleton<IConfiguration>(Configuration);
-            builder.Services.AddSingleton<IJwtManagerRepository, JwtManagerRepository>();
+            builder.Services.AddSingleton<IJwtManagerRepo, JwtManagerRepo>();
+
+            var arangoConfig = Configuration.GetRequiredSection("ArangoDb");
+            var transport = HttpApiTransport.UsingBasicAuth(
+                new Uri(arangoConfig["URI"]),
+                arangoConfig["Database"],
+                arangoConfig["Username"],
+                arangoConfig["Password"]);
+            
+            builder.Services.AddSingleton<IArangoDBClient>(new ArangoDBClient(transport));
+
+            #region Repos
+            builder.Services.AddSingleton<CategoryRepo>();
+            #endregion
 
             builder.Services.AddAuthentication(options =>
             {
@@ -34,13 +51,16 @@ namespace TastyBytesReact
                     ValidIssuer = Configuration.GetSection("JWT")["Issuer"],
                     ValidAudience = Configuration.GetSection("JWT")["Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateLifetime= true,
+                    ValidateLifetime = true,
                     //On production set them to true 
                     ValidateIssuer = false,
                     ValidateAudience = false,
                 };
             });
 
+            builder.Services.AddCors(c => c.AddPolicy("corsApp", builder =>
+               builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader()
+            ));
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -52,7 +72,7 @@ namespace TastyBytesReact
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseCors("corsApp");
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller}/{action=Index}/{id?}");
