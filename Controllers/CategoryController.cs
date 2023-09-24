@@ -27,5 +27,12 @@ namespace TastyBytesReact.Controllers
         {
             return await _categoryRepo.GetAll(type);
         }
+
+        [HttpGet]
+        [Route("{key}")]
+        public async Task<IEnumerable<CategoryModel>> GetCategoryByKey(string key)
+        {
+            return await _categoryRepo.GetByKey(key);
+        }
     }
 }

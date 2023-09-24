@@ -38,5 +38,21 @@ namespace TastyBytesReact.Repository.Arango
                 .ConfigureAwait(false);
             return cursor.Result;
         }
+
+        /// <summary>
+        /// Gets a category by key.
+        /// </summary>
+        /// <param name="key">Category key to filter by.</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<CategoryModel>> GetByKey(string key)
+        {
+            var cursor = await _client.Cursor.PostCursorAsync<CategoryModel>(
+                @"FOR doc IN Category FILTER doc._key == @key
+                RETURN doc", new Dictionary<string, object>() {
+                    { "key", key.ToString() }
+                })
+                .ConfigureAwait(false);
+            return cursor.Result;
+        }
     }
 }
