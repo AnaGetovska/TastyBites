@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TastyBytesReact.Models;
+using TastyBytesReact.Models.Nodes;
 using TastyBytesReact.Repository.Arango;
 
 namespace TastyBytesReact.Controllers

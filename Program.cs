@@ -35,6 +35,8 @@ namespace TastyBytesReact
 
             #region Repos
             builder.Services.AddSingleton<CategoryRepo>();
+            builder.Services.AddSingleton<RecipeRepo>();
+            builder.Services.AddSingleton<IngredientRepo>();
             #endregion
 
             builder.Services.AddAuthentication(options =>

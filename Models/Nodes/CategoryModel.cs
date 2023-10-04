@@ -1,22 +1,13 @@
 ﻿using TastyBytesReact.Models.Arango;
 
-namespace TastyBytesReact.Models
+namespace TastyBytesReact.Models.Nodes
 {
     /// <summary>
     /// Model representation of the database Category documents
     /// describing each dish or ingredient category.
     /// </summary>
-    public class CategoryModel : IArangoDocument
+    public class CategoryModel : ArangoDocument
     {
-        /// <inheritdoc/>
-        public string _id { get; set; }
-
-        /// <inheritdoc/>
-        public string _key { get; set; }
-
-        /// <inheritdoc/>
-        public string _rev { get; set; }
-
         /// <summary>
         /// Category name.
         /// </summary>

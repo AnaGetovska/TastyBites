@@ -1,5 +1,6 @@
 ﻿using ArangoDBNetStandard;
 using TastyBytesReact.Models;
+using TastyBytesReact.Models.Nodes;
 
 namespace TastyBytesReact.Repository.Arango
 {
