@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TastyBytesReact.Repository;
 using TastyBytesReact.Repository.Arango;
+using TastyBytesReact.Services;
 
 namespace TastyBytesReact
 {
@@ -22,7 +23,6 @@ namespace TastyBytesReact
 
             var Configuration = new ConfigurationBuilder().AddEnvironmentVariables("TB").AddJsonFile("appsettings.json").Build();
             builder.Services.AddSingleton<IConfiguration>(Configuration);
-            builder.Services.AddSingleton<IJwtManagerRepo, JwtManagerRepo>();
 
             var arangoConfig = Configuration.GetRequiredSection("ArangoDb");
             var transport = HttpApiTransport.UsingBasicAuth(
@@ -32,11 +32,15 @@ namespace TastyBytesReact
                 arangoConfig["Password"]);
             
             builder.Services.AddSingleton<IArangoDBClient>(new ArangoDBClient(transport));
+            builder.Services.AddSingleton<IUserService, UserService>();
+
 
             #region Repos
+            builder.Services.AddSingleton<IJwtManagerRepo, JwtManagerRepo>();
             builder.Services.AddSingleton<CategoryRepo>();
             builder.Services.AddSingleton<RecipeRepo>();
             builder.Services.AddSingleton<IngredientRepo>();
+            builder.Services.AddSingleton<UserRepo>();
             #endregion
 
             builder.Services.AddAuthentication(options =>

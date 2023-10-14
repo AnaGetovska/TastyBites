@@ -2,34 +2,28 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using TastyBytesReact.Models.Requests;
 using TastyBytesReact.Models.Responses;
+using TastyBytesReact.Resources;
 
 namespace TastyBytesReact.Repository
 {
     public class JwtManagerRepo : IJwtManagerRepo
     {
         private readonly IConfiguration configuration;
-        Dictionary<string, string> UserRecords = new Dictionary<string, string>{
-            { "user1", "password1"},
-            { "user2", "password2"},
-            { "user3", "password3"},
-            { "user4", "password4"},
-            { "user5", "password5"},
-            { "user6", "password6"},
-        };
+        //Dictionary<string, string> UserRecords = new Dictionary<string, string>{
+        //    { "user1", "password1"},
+        //    { "user2", "password2"},
+        //    { "user3", "password3"},
+        //    { "user4", "password4"},
+        //    { "user5", "password5"},
+        //    { "user6", "password6"},
+        //};
 
         public JwtManagerRepo(IConfiguration configuration) {
          this.configuration = configuration;
         }
-        public TokenResponse Authenticate(LoginRequest user)
+        public TokenResponse GenerateToken(LoginRequest user)
         {
-            if (!UserRecords.Any(x => x.Key == user.Username && x.Value == user.Password))
-            {
-                return null;
-            }
-
-            //else we generate JWT token
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenKey = Encoding.UTF8.GetBytes(configuration.GetSection("JWT")["Key"]);
 

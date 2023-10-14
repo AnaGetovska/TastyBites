@@ -1,10 +1,10 @@
-﻿using TastyBytesReact.Models.Requests;
-using TastyBytesReact.Models.Responses;
+﻿using TastyBytesReact.Models.Responses;
+using TastyBytesReact.Resources;
 
 namespace TastyBytesReact.Repository
 {
     public interface IJwtManagerRepo
     {
-        TokenResponse Authenticate(LoginRequest user);
+        TokenResponse GenerateToken(LoginRequest user);
     }
 }
