@@ -1,6 +1,9 @@
 ﻿using ArangoDBNetStandard;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using System;
 using TastyBytesReact.Models;
 using TastyBytesReact.Models.Nodes;
+using TastyBytesReact.Models.Requests;
 
 namespace TastyBytesReact.Repository.Arango
 {
@@ -26,6 +29,32 @@ namespace TastyBytesReact.Repository.Arango
         }
 
         /// <summary>
+        ///Creates new recipe.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<RecipeModel>> AddRecipe(AddRecipeRequest newRecipe, string imgName)
+        {
+
+            var cursor = await _client.Cursor.PostCursorAsync<RecipeModel>(
+                @"INSERT {
+                    Name: @name,
+                    PreparationTime: @prepTime,
+                    Portions:@portions,
+                    Description: @description,
+                    DisplayImage: @displayImage
+                } INTO Recipe
+                  RETURN NEW", new Dictionary<string, object>(){
+                {"name", newRecipe.Name },
+                {"prepTime", newRecipe.PreparationTime },
+                {"portions", newRecipe.Portions },
+                {"description", newRecipe.Description },
+                {"displayImage", imgName },
+            })
+                .ConfigureAwait(false);
+            return cursor.Result;
+        }
+
+        /// <summary>
         /// Gets all extended recipes.
         /// </summary>
         /// <returns></returns>
@@ -44,21 +73,25 @@ namespace TastyBytesReact.Repository.Arango
         }
 
         /// <summary>
-        /// Gets all recipes by category.
+        /// Gets all recipes by char segment included in the Name.
         /// </summary>
-        /// <param name="category">Category model to filter by.</param>
-        /// <returns></returns>
-        //public async Task<IEnumerable<RecipeModel>> GetAll(CategoryModel category)
-        //{
-
-        //}
+        /// <param name="name">Character segment included in recipe name</param>
+        public async Task<IEnumerable<RecipeModel>> GetAllByNameCut(string segment)
+        {
+            var cursor = await _client.Cursor.PostCursorAsync<RecipeModel>(
+               @"FOR doc IN Recipe FILTER LOWER(doc.Name) LIKE CONCAT(""%"", @segment, ""%"") RETURN doc",
+               new Dictionary<string, object>() {
+                    { "segment", segment }
+               })
+               .ConfigureAwait(false);
+            return cursor.Result;
+        }
 
         /// <summary>
         /// Gets all recipes filtered by preparation time.
         /// </summary>
         /// <param name="time">Recipe preparation time to filter by.</param>
         /// <param name="comparison">Comparison type.See <see cref="ComparisonType"></see>.</param>
-        /// <returns></returns>
         public async Task<IEnumerable<RecipeModel>> GetByPrepTime(int time, ComparisonType comparison)
         {
             var comparisonTypes = new Dictionary<ComparisonType, string>() {
@@ -71,9 +104,27 @@ namespace TastyBytesReact.Repository.Arango
             };
 
             var cursor = await _client.Cursor.PostCursorAsync<RecipeModel>(
-                @"FOR doc IN Recipe FILTER doc.PreparationTime " + comparisonTypes[comparison] +@" @time
+                @"FOR doc IN Recipe FILTER doc.PreparationTime " + comparisonTypes[comparison] + @" @time
                 RETURN doc", new Dictionary<string, object>() {
                     { "time", time }
+                })
+                .ConfigureAwait(false);
+            return cursor.Result;
+        }
+
+        /// <summary>
+        /// Gets all recipes that contains a collection of ingredients' keys.
+        /// </summary>
+        /// <param name="ingredientsKeys">The keys af all searched ingredients.</param>
+        public async Task<IEnumerable<RecipeModel>> GetByIngredients(string[] ingredientsKeys)
+        {
+            var cursor = await _client.Cursor.PostCursorAsync<RecipeModel>(
+                @"FOR r IN Recipe
+                    LET ingredients = (FOR v IN 1 INBOUND r._id IsContained RETURN v._key)
+                    LET matches = INTERSECTION(ingredients, @searchKeys)
+                    FILTER COUNT(matches) == COUNT(@searchKeys)
+                    RETURN r", new Dictionary<string, object>() {
+                    { "searchKeys", ingredientsKeys }
                 })
                 .ConfigureAwait(false);
             return cursor.Result;

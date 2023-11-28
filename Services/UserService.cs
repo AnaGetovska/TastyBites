@@ -4,6 +4,7 @@ using ArangoDBNetStandard;
 using TastyBytesReact.Data;
 using TastyBytesReact.Repository.Arango;
 using TastyBytesReact.Repository;
+using TastyBytesReact.Models.Nodes;
 
 namespace TastyBytesReact.Services
 {

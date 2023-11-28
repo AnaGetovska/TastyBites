@@ -1,6 +1,6 @@
 ﻿using TastyBytesReact.Models.Arango;
 
-namespace TastyBytesReact.Models
+namespace TastyBytesReact.Models.Nodes
 {
     public class UserModel : ArangoDocument
     {

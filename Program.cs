@@ -8,6 +8,7 @@ using System.Text;
 using TastyBytesReact.Repository;
 using TastyBytesReact.Repository.Arango;
 using TastyBytesReact.Services;
+using TastyBytesReact.Utilities;
 
 namespace TastyBytesReact
 {

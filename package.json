@@ -9,5 +9,8 @@
     "@types/react-dom": "^18.2.7",
     "framer-motion": "^10.15.0",
     "typescript": "^5.1.6"
+  },
+  "devDependencies": {
+    "run-script-os": "^1.1.6"
   }
 }
