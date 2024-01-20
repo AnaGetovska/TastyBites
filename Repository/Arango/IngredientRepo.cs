@@ -50,5 +50,22 @@ namespace TastyBytesReact.Repository.Arango
                .ConfigureAwait(false);
             return cursor.Result;
         }
+
+        /// <summary>
+        /// Gets all ingredients by char segment included in the Name.
+        /// </summary>
+        /// <param name="name">Character segment included in ingredient name</param>
+        public async Task<IEnumerable<IngredientModel>> GetAllByKeys(string[] keys)
+        {
+            var cursor = await _client.Cursor.PostCursorAsync<IngredientModel>(
+               @"FOR i IN Ingredient
+                   FILTER i._key IN @keys
+                   RETURN i",
+               new Dictionary<string, object>() {
+                    { "keys", keys }
+               })
+               .ConfigureAwait(false);
+            return cursor.Result;
+        }
     }
 }

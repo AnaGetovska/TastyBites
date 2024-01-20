@@ -11,7 +11,7 @@ namespace TastyBytesReact.Models.Nodes
         /// <summary>
         /// Category name.
         /// </summary>
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         /// <summary>
         /// Category type. See <see cref="CategoryType"/>.
@@ -21,6 +21,6 @@ namespace TastyBytesReact.Models.Nodes
         /// <summary>
         /// Category description.
         /// </summary>
-        public string Description { get; set; }
+        public required string Description { get; set; }
     }
 }

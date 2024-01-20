@@ -27,5 +27,15 @@ namespace TastyBytesReact.Models.Nodes
         /// Recipe's secondary collection of images' path.
         /// </summary>
         public string[] Images { get; set; }
+
+        /// <summary>
+        /// Recipe's rating.
+        /// </summary>
+        public float Rating { get; set; }
+
+        /// <summary>
+        /// Count of voted users.
+        /// </summary>
+        public float RatingCount { get; set; }
     }
 }

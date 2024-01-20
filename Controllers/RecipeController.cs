@@ -1,4 +1,5 @@
 ﻿using ArangoDBNetStandard.AnalyzerApi.Models;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TastyBytesReact.Models;
@@ -47,9 +48,24 @@ namespace TastyBytesReact.Controllers
 
         [HttpGet]
         [Route("extended/all")]
-        public async Task<IEnumerable<RecipeModel>> GetAllExtended()
+        public async Task<IEnumerable<ExtendedRecipeModel>> GetAllExtended()
         {
             return await _recipeRepo.GetAllExtended();
+        }
+
+        [HttpGet]
+        [Route("extended/{key}")]
+        public async Task<IEnumerable<ExtendedRecipeModel>> GetExtendedByKey(string key)
+        {
+            return await _recipeRepo.GetExtendedByKey(key);
+        }
+
+        [HttpGet]
+        [Route("extended")]
+        public async Task<IEnumerable<ExtendedRecipeModel>> GetAllExtendedByKeys([FromQuery]string keys)
+        {
+            var recipeKeys = keys.Split(',').ToArray();
+            return await _recipeRepo.GetAllExtendedByKeys(recipeKeys);
         }
 
         [HttpPost]

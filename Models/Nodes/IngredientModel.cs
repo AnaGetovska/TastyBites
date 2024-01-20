@@ -17,5 +17,15 @@ namespace TastyBytesReact.Models.Nodes
         /// Ingredient description.
         /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// Measurement unit.
+        /// </summary>
+        public string MeasurementUnit { get; set; }
+
+        /// <summary>
+        /// Quantity of ingredient.
+        /// </summary>
+        public string Quantity { get; set; }
     }
 }

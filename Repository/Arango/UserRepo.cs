@@ -1,4 +1,6 @@
 ﻿using ArangoDBNetStandard;
+using TastyBytesReact.Models;
+using TastyBytesReact.Models.Edges;
 using TastyBytesReact.Models.Nodes;
 
 namespace TastyBytesReact.Repository.Arango
@@ -68,6 +70,63 @@ namespace TastyBytesReact.Repository.Arango
                })
                .ConfigureAwait(false);
             return cursor.Result.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Get weekly menu for user by key.
+        /// </summary>
+        public async Task<IEnumerable<InMenuModel>> GetWeeklyMenuByUserKey(string userKey)
+        {
+            var cursor = await _client.Cursor.PostCursorAsync<InMenuModel>(
+               @"FOR e IN InMenu
+                    FILTER e._to == CONCAT(""User/"", @key)
+                    RETURN e",
+               new Dictionary<string, object>()
+               {
+                   {"key", userKey },
+               })
+               .ConfigureAwait(false);
+            return cursor.Result;
+        }
+
+        /// <summary>
+        /// Set weekly menu for user by key.
+        /// </summary>
+        public async Task SetWeeklyMenuByUserKey(string userKey, string recipeKey, DayEnum[] days)
+        {
+            var recipeMenuItems = (await GetWeeklyMenuByUserKey(userKey)).Where(i => i._from == "Recipe/" + recipeKey).ToList();
+
+            var daysToAdd = days.Where(i => !recipeMenuItems.Select(r => r.Day).Contains(i));
+            var daysToRemove = recipeMenuItems.Where(i => !days.Contains(i.Day));
+
+            foreach (var day in daysToRemove)
+            {
+                await _client.Document.DeleteDocumentAsync(day._id).ConfigureAwait(false);
+            }
+
+            foreach (var day in daysToAdd)
+            {
+                await _client.Document.PostDocumentAsync("InMenu", new NewInMenuModel { Day = day, _from = "Recipe/" + recipeKey, _to = "User/" + userKey });
+            }
+        }
+
+        public async Task<IEnumerable<ShoppingListItemModel>> GetShoppingList(string userKey)
+        {
+            return (await _client.Document.GetDocumentAsync<UserModel>("User", userKey)).ShoppingList;
+        }
+
+        public async Task AddToShoppingList(string userKey, ShoppingListItemModel item)
+        {
+            var user = await _client.Document.GetDocumentAsync<UserModel>("User", userKey);
+            user.ShoppingList.Add(item);
+            await _client.Document.PutDocumentAsync(user._id, user);
+        }
+
+        public async Task RemoveFromShoppingList(string userKey, uint index)
+        {
+            var user = await _client.Document.GetDocumentAsync<UserModel>("User", userKey);
+            user.ShoppingList.RemoveAt((int)index);
+            await _client.Document.PutDocumentAsync(user._id, user);
         }
     }
 }

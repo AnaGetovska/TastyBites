@@ -1,4 +1,5 @@
 ﻿using ArangoDBNetStandard;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using System;
 using TastyBytesReact.Models;
@@ -58,16 +59,54 @@ namespace TastyBytesReact.Repository.Arango
         /// Gets all extended recipes.
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<RecipeModel>> GetAllExtended()
+        public async Task<IEnumerable<ExtendedRecipeModel>> GetAllExtended()
         {
             var cursor = await _client.Cursor.PostCursorAsync<ExtendedRecipeModel>(
                 @"FOR doc IN Recipe
                     LET categories = (FOR v IN 1 OUTBOUND doc._id InCategory RETURN v)
+                    LET rating = (FOR v,e IN 1 OUTBOUND doc._id HasRating RETURN e.Rating)
                     LET ingredients = (FOR v,e IN 1 INBOUND doc._id IsContained RETURN MERGE(e, v))
                     LET allergens = (FOR ingredient IN ingredients
                     FOR v IN 1 OUTBOUND ingredient._id InCategory RETURN v
                 )
-                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens})")
+                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)})")
+                .ConfigureAwait(false);
+            return cursor.Result;
+        }
+
+        /// <summary>
+        /// Gets extended recipe by key.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<ExtendedRecipeModel>> GetExtendedByKey(string key)
+        {
+            var cursor = await _client.Cursor.PostCursorAsync<ExtendedRecipeModel>(
+                @"let doc = DOCUMENT(CONCAT(""Recipe/"", @key))
+                    LET categories = (FOR v IN 1 OUTBOUND doc._id InCategory RETURN v)
+                    LET ingredients = (FOR v,e IN 1 INBOUND doc._id IsContained RETURN MERGE(e, v))
+                    LET rating = (FOR v,e IN 1 OUTBOUND doc._id HasRating RETURN e.Rating)
+                    LET allergens = (FOR ingredient IN ingredients FOR v IN 1 OUTBOUND ingredient._id InCategory RETURN v)
+                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)})", new Dictionary<string, object>() { { "key", key } })
+                .ConfigureAwait(false);
+            return cursor.Result;
+        }
+
+        /// <summary>
+        /// Gets all extended recipes filtered by collection of keys.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IEnumerable<ExtendedRecipeModel>> GetAllExtendedByKeys(string[] keys)
+        {
+            var cursor = await _client.Cursor.PostCursorAsync<ExtendedRecipeModel>(
+                @"FOR doc IN Recipe
+                    FILTER POSITION(@keys, doc._key)
+                    LET categories = (FOR v IN 1 OUTBOUND doc._id InCategory RETURN v)
+                    LET rating = (FOR v,e IN 1 OUTBOUND doc._id HasRating RETURN e.Rating)
+                    LET ingredients = (FOR v,e IN 1 INBOUND doc._id IsContained RETURN MERGE(e, v))
+                    LET allergens = (FOR ingredient IN ingredients
+                    FOR v IN 1 OUTBOUND ingredient._id InCategory RETURN v
+                )
+                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)})", new Dictionary<string, object>() { { "keys", keys } })
                 .ConfigureAwait(false);
             return cursor.Result;
         }

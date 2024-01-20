@@ -55,7 +55,7 @@ namespace TastyBytesReact.Services
             if (user.PasswordHash != passwordHash)
                 throw new Exception("Username or password did not match.");
 
-            var token = _jwtManagerRepository.GenerateToken(resource);
+            var token = _jwtManagerRepository.GenerateToken(user);
             return new UserResponse(user.Username, token, user.IsAdmin);
         }
     }

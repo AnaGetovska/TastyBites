@@ -66,7 +66,7 @@ namespace TastyBytesReact
             });
 
             builder.Services.AddCors(c => c.AddPolicy("corsApp", builder =>
-               builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader()
+               builder.WithOrigins("*").WithMethods("GET", "POST", "DELETE", "PUT").AllowAnyMethod().AllowAnyHeader()
             ));
             var app = builder.Build();
 
