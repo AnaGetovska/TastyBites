@@ -33,7 +33,7 @@ namespace TastyBytesReact.Controllers
         [Route("filter/name/{segment}")]
         public async Task<IEnumerable<IngredientModel>> GetAllByNameCut(string segment)
         {
-            return await _ingRepo.GetAllByNameCut(segment);
+            return await _ingRepo.GetAllByWildcard(segment);
         }
 
         [HttpPost]

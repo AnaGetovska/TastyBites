@@ -1,5 +1,7 @@
 ﻿using ArangoDBNetStandard;
+using ArangoDBNetStandard.Serialization;
 using TastyBytesReact.Models;
+using TastyBytesReact.Models.Edges;
 using TastyBytesReact.Models.Nodes;
 
 namespace TastyBytesReact.Repository.Arango
@@ -40,7 +42,7 @@ namespace TastyBytesReact.Repository.Arango
         /// Gets all ingredients by char segment included in the Name.
         /// </summary>
         /// <param name="name">Character segment included in ingredient name</param>
-        public async Task<IEnumerable<IngredientModel>> GetAllByNameCut(string segment)
+        public async Task<IEnumerable<IngredientModel>> GetAllByWildcard(string segment)
         {
             var cursor = await _client.Cursor.PostCursorAsync<IngredientModel>(
                @"FOR doc IN Ingredient FILTER LOWER(doc.Name) LIKE CONCAT(""%"", @segment, ""%"") RETURN doc",
@@ -66,6 +68,18 @@ namespace TastyBytesReact.Repository.Arango
                })
                .ConfigureAwait(false);
             return cursor.Result;
+        }
+
+        public async Task<IsContainedModel> AddIngredientToRecipe(IngredientModel ingredient, string recipeKey)
+        {
+            return (await _client.Document.PostDocumentAsync("IsContained",
+            new IsContainedModel()
+            {
+                _from = "Ingredient/" + ingredient._key,
+                _to = "Recipe/" + recipeKey,
+                MeasurementUnit = ingredient.MeasurementUnit,
+                Quantity = float.Parse(ingredient.Quantity)
+            })).New;
         }
     }
 }

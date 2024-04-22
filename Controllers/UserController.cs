@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading;
 using TastyBytesReact.Models;
 using TastyBytesReact.Models.Edges;
+using TastyBytesReact.Models.Nodes;
 using TastyBytesReact.Repository.Arango;
 using TastyBytesReact.Resources;
 using TastyBytesReact.Services;
@@ -16,11 +18,13 @@ namespace TastyBytesReact.Controllers
     {
         private readonly IUserService _service;
         private readonly UserRepo _repo;
+        private readonly RecipeRepo _recipeRepo;
 
-        public UserController(IUserService service, UserRepo repo)
+        public UserController(IUserService service, UserRepo repo, RecipeRepo recipeRepo)
         {
             _service = service;
             _repo = repo;
+            _recipeRepo = recipeRepo;
         }
 
         [AllowAnonymous]
@@ -112,6 +116,50 @@ namespace TastyBytesReact.Controllers
             }
 
             await _repo.RemoveFromShoppingList(userKey,(uint) index);
+        }
+
+        [HttpGet]
+        [Route("favourites")]
+        public async Task<IEnumerable<ExtendedRecipeModel>> GetFavourites()
+        {
+            var userKey = User.Claims.FirstOrDefault(c => c.Type == "UserKey")?.Value;
+            if (userKey == null)
+            {
+                throw new InvalidDataException($"User key is null.");
+            }
+
+            var likedRecipeIds = await _repo.GetFavRecipeIds(userKey);
+            
+            
+            var keys = likedRecipeIds.Select(k => k.Substring(k.IndexOf("/") + 1)).ToArray();
+
+            return await _recipeRepo.GetAllExtendedByKeys(keys);
+        }
+
+        [HttpDelete]
+        [Route("favourites/{key}")]
+        public async Task DeleteFromFavourites(string key)
+        {
+            var userKey = User.Claims.FirstOrDefault(c => c.Type == "UserKey")?.Value;
+            if (userKey == null)
+            {
+                throw new InvalidDataException($"User key is null.");
+            }
+
+            await _repo.RemoveFromFavourites(userKey, key);
+        }
+
+        [HttpPost]
+        [Route("favourites")]
+        public async Task AddToFavourites([FromBody] string key)
+        {
+            var userKey = User.Claims.FirstOrDefault(c => c.Type == "UserKey")?.Value;
+            if (userKey == null)
+            {
+                throw new InvalidDataException($"User key is null.");
+            }
+
+            await _repo.AddToFavourites(userKey, key);
         }
     }
 }

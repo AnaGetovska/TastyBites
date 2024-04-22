@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using TastyBytesReact.Models;
 using TastyBytesReact.Models.Nodes;
 using TastyBytesReact.Models.Requests;
@@ -15,9 +16,16 @@ namespace TastyBytesReact.Controllers
     public class RecipeController : ControllerBase
     {
         private readonly RecipeRepo _recipeRepo;
-        public RecipeController(RecipeRepo recipeRepo)
+        private readonly ImageRepo _imageRepo;
+        private readonly IngredientRepo _ingredientRepo;
+        private readonly CategoryRepo _categoryRepo;
+
+        public RecipeController(RecipeRepo recipeRepo, ImageRepo imageRepo, IngredientRepo ingredientRepo, CategoryRepo categoryRepo)
         {
             _recipeRepo = recipeRepo;
+            _imageRepo = imageRepo;
+            _ingredientRepo = ingredientRepo;
+            _categoryRepo = categoryRepo;
         }
 
         [HttpGet]
@@ -62,7 +70,7 @@ namespace TastyBytesReact.Controllers
 
         [HttpGet]
         [Route("extended")]
-        public async Task<IEnumerable<ExtendedRecipeModel>> GetAllExtendedByKeys([FromQuery]string keys)
+        public async Task<IEnumerable<ExtendedRecipeModel>> GetAllExtendedByKeys([FromQuery] string keys)
         {
             var recipeKeys = keys.Split(',').ToArray();
             return await _recipeRepo.GetAllExtendedByKeys(recipeKeys);
@@ -74,11 +82,20 @@ namespace TastyBytesReact.Controllers
         {
             try
             {
-                var displayImageName = UploadUtility.GenerateFileImageName(requestData.DisplayImage.ContentType);
+                var convertedImage = UploadUtility.ConvertImageToBase64(requestData.DisplayImage);
+                var savedImage = await _imageRepo.SaveImage(convertedImage, requestData.DisplayImage.ContentType);
+                var savedRecipe = await _recipeRepo.AddRecipe(requestData, savedImage.First()._key);
+                foreach (var ingredient in requestData.Ingredients
+                    .Select(i => JsonSerializer.Deserialize<IngredientModel>(i, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true })))
+                {
+                    await _ingredientRepo.AddIngredientToRecipe(ingredient, savedRecipe.First()._key);
+                }
 
-                var savedRecipe =  await _recipeRepo.AddRecipe(requestData, displayImageName);
-                
-                await UploadUtility.SaveImageFile(savedRecipe.First()._key,displayImageName,requestData.DisplayImage);
+                foreach (var category in requestData.Categories
+                    .Select(i => JsonSerializer.Deserialize<CategoryModel>(i, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true })))
+                {
+                    await _categoryRepo.AddCategoryToRecipe(category, savedRecipe.First()._key);
+                }
                 return savedRecipe;
             }
             catch (Exception e)

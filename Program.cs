@@ -35,13 +35,13 @@ namespace TastyBytesReact
             builder.Services.AddSingleton<IArangoDBClient>(new ArangoDBClient(transport));
             builder.Services.AddSingleton<IUserService, UserService>();
 
-
             #region Repos
             builder.Services.AddSingleton<IJwtManagerRepo, JwtManagerRepo>();
             builder.Services.AddSingleton<CategoryRepo>();
             builder.Services.AddSingleton<RecipeRepo>();
             builder.Services.AddSingleton<IngredientRepo>();
             builder.Services.AddSingleton<UserRepo>();
+            builder.Services.AddSingleton<ImageRepo>();
             #endregion
 
             builder.Services.AddAuthentication(options =>
@@ -69,11 +69,6 @@ namespace TastyBytesReact
                builder.WithOrigins("*").WithMethods("GET", "POST", "DELETE", "PUT").AllowAnyMethod().AllowAnyHeader()
             ));
             var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-            }
 
             app.UseStaticFiles();
             app.UseRouting();

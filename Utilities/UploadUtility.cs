@@ -50,5 +50,13 @@ namespace TastyBytesReact.Utilities
                 throw new Exception(e.Message);
             }
         }
+
+        public static string ConvertImageToBase64(IFormFile imageData)
+        {
+            using var dataStream = imageData.OpenReadStream();
+            using var reader = new BinaryReader(dataStream);
+            byte[] byteData = reader.ReadBytes((int)dataStream.Length);
+            return Convert.ToBase64String(byteData);
+        }
     }
 }

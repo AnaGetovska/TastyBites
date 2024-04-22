@@ -1,5 +1,6 @@
 ﻿using ArangoDBNetStandard;
 using TastyBytesReact.Models;
+using TastyBytesReact.Models.Arango;
 using TastyBytesReact.Models.Edges;
 using TastyBytesReact.Models.Nodes;
 
@@ -13,10 +14,6 @@ namespace TastyBytesReact.Repository.Arango
             _client = client;
         }
 
-        /// <summary>
-        /// Creates new user in the DB.
-        /// </summary>
-        /// <returns></returns>
         public async Task CreateUser(UserModel userData)
         {
             var cursor = await _client.Cursor.PostCursorAsync<UserModel>(
@@ -37,10 +34,6 @@ namespace TastyBytesReact.Repository.Arango
         
         }
 
-        /// <summary>
-        /// Removes given user.
-        /// </summary>
-        /// <returns></returns>
         public async Task RemoveUser(UserModel userData)
         {
             var cursor = await _client.Cursor.PostCursorAsync<RecipeModel>(
@@ -54,10 +47,6 @@ namespace TastyBytesReact.Repository.Arango
                .ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Search for all user with given username.
-        /// </summary>
-        /// <returns><see cref="UserModel"/> if the user exists or <see cref="Array.Empty{T}"/></returns>
         public async Task<UserModel> GetUserByUsername(string username)
         {
             var cursor = await _client.Cursor.PostCursorAsync<UserModel>(
@@ -72,9 +61,6 @@ namespace TastyBytesReact.Repository.Arango
             return cursor.Result.FirstOrDefault();
         }
 
-        /// <summary>
-        /// Get weekly menu for user by key.
-        /// </summary>
         public async Task<IEnumerable<InMenuModel>> GetWeeklyMenuByUserKey(string userKey)
         {
             var cursor = await _client.Cursor.PostCursorAsync<InMenuModel>(
@@ -89,9 +75,6 @@ namespace TastyBytesReact.Repository.Arango
             return cursor.Result;
         }
 
-        /// <summary>
-        /// Set weekly menu for user by key.
-        /// </summary>
         public async Task SetWeeklyMenuByUserKey(string userKey, string recipeKey, DayEnum[] days)
         {
             var recipeMenuItems = (await GetWeeklyMenuByUserKey(userKey)).Where(i => i._from == "Recipe/" + recipeKey).ToList();
@@ -127,6 +110,35 @@ namespace TastyBytesReact.Repository.Arango
             var user = await _client.Document.GetDocumentAsync<UserModel>("User", userKey);
             user.ShoppingList.RemoveAt((int)index);
             await _client.Document.PutDocumentAsync(user._id, user);
+        }
+
+        public async Task<IEnumerable<string>> GetFavRecipeIds(string userKey)
+        {
+            var res = await _client.Cursor.PostCursorAsync<string>(
+              @"FOR v, e IN 1 INBOUND CONCAT(""User/"",@userKey) LikedBy RETURN e._from", new Dictionary<string, object>() { { "userKey", userKey } })
+              .ConfigureAwait(false);
+            return res.Result;
+        }
+
+        public async Task RemoveFromFavourites(string userKey, string recipeKey)
+        {
+            await _client.Cursor.PostCursorAsync<ArangoEdge>(
+               @"FOR doc IN User FILTER doc._id == CONCAT(""User/"",@userKey)
+                    FOR v, e IN 1 INBOUND doc._id LikedBy
+                    FILTER e._from == CONCAT(""Recipe/"",@recipeKey)
+                REMOVE e IN LikedBy", new Dictionary<string, object>() { { "userKey", userKey }, { "recipeKey", recipeKey } })
+               .ConfigureAwait(false);
+        }
+
+        public async Task AddToFavourites(string userKey, string recipeKey)
+        {
+            var likedBy = new ArangoEdge()
+            {
+                _from = "Recipe/" + recipeKey,
+                _to = "User/" + userKey
+            };
+
+            await _client.Document.PostDocumentAsync<ArangoEdge>("LikedBy", likedBy);
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using ArangoDBNetStandard;
 using TastyBytesReact.Models;
+using TastyBytesReact.Models.Arango;
+using TastyBytesReact.Models.Edges;
 using TastyBytesReact.Models.Nodes;
 
 namespace TastyBytesReact.Repository.Arango
@@ -54,6 +56,16 @@ namespace TastyBytesReact.Repository.Arango
                 })
                 .ConfigureAwait(false);
             return cursor.Result;
+        }
+
+        public async Task<ArangoEdge> AddCategoryToRecipe(CategoryModel category, string recipeKey)
+        {
+            return (await _client.Document.PostDocumentAsync("InCategory",
+            new ArangoEdge()
+            {
+                _from = "Recipe/" + recipeKey,
+                _to = "Category/" + category._key,
+            })).New;
         }
     }
 }

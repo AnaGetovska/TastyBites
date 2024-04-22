@@ -33,7 +33,7 @@ namespace TastyBytesReact.Repository.Arango
         ///Creates new recipe.
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<RecipeModel>> AddRecipe(AddRecipeRequest newRecipe, string imgName)
+        public async Task<IEnumerable<RecipeModel>> AddRecipe(AddRecipeRequest newRecipe, string imgKey)
         {
 
             var cursor = await _client.Cursor.PostCursorAsync<RecipeModel>(
@@ -49,7 +49,7 @@ namespace TastyBytesReact.Repository.Arango
                 {"prepTime", newRecipe.PreparationTime },
                 {"portions", newRecipe.Portions },
                 {"description", newRecipe.Description },
-                {"displayImage", imgName },
+                {"displayImage", imgKey },
             })
                 .ConfigureAwait(false);
             return cursor.Result;
@@ -66,10 +66,11 @@ namespace TastyBytesReact.Repository.Arango
                     LET categories = (FOR v IN 1 OUTBOUND doc._id InCategory RETURN v)
                     LET rating = (FOR v,e IN 1 OUTBOUND doc._id HasRating RETURN e.Rating)
                     LET ingredients = (FOR v,e IN 1 INBOUND doc._id IsContained RETURN MERGE(e, v))
+                    LET isLiked = (FOR v,e IN 1 OUTBOUND doc._id LikedBy RETURN e)
                     LET allergens = (FOR ingredient IN ingredients
                     FOR v IN 1 OUTBOUND ingredient._id InCategory RETURN v
                 )
-                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)})")
+                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)}, {LikedBy: COUNT(isLiked)>0})")
                 .ConfigureAwait(false);
             return cursor.Result;
         }
@@ -84,9 +85,10 @@ namespace TastyBytesReact.Repository.Arango
                 @"let doc = DOCUMENT(CONCAT(""Recipe/"", @key))
                     LET categories = (FOR v IN 1 OUTBOUND doc._id InCategory RETURN v)
                     LET ingredients = (FOR v,e IN 1 INBOUND doc._id IsContained RETURN MERGE(e, v))
+                    LET isLiked = (FOR v,e IN 1 OUTBOUND doc._id LikedBy RETURN e)
                     LET rating = (FOR v,e IN 1 OUTBOUND doc._id HasRating RETURN e.Rating)
                     LET allergens = (FOR ingredient IN ingredients FOR v IN 1 OUTBOUND ingredient._id InCategory RETURN v)
-                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)})", new Dictionary<string, object>() { { "key", key } })
+                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)}, {LikedBy: COUNT(isLiked)>0})", new Dictionary<string, object>() { { "key", key } })
                 .ConfigureAwait(false);
             return cursor.Result;
         }
@@ -102,11 +104,12 @@ namespace TastyBytesReact.Repository.Arango
                     FILTER POSITION(@keys, doc._key)
                     LET categories = (FOR v IN 1 OUTBOUND doc._id InCategory RETURN v)
                     LET rating = (FOR v,e IN 1 OUTBOUND doc._id HasRating RETURN e.Rating)
+                    LET isLiked = (FOR v,e IN 1 OUTBOUND doc._id LikedBy RETURN e)
                     LET ingredients = (FOR v,e IN 1 INBOUND doc._id IsContained RETURN MERGE(e, v))
                     LET allergens = (FOR ingredient IN ingredients
                     FOR v IN 1 OUTBOUND ingredient._id InCategory RETURN v
                 )
-                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)})", new Dictionary<string, object>() { { "keys", keys } })
+                RETURN MERGE(doc,{Categories: categories},{Ingredients: ingredients}, {Allergens: allergens}, {Rating: COUNT(rating) > 0 ? SUM(rating)/COUNT(rating) : 0}, {RatingCount: COUNT(rating)}, {LikedBy: COUNT(isLiked)>0})", new Dictionary<string, object>() { { "keys", keys } })
                 .ConfigureAwait(false);
             return cursor.Result;
         }

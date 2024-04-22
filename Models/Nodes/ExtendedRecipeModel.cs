@@ -37,5 +37,10 @@ namespace TastyBytesReact.Models.Nodes
         /// Count of voted users.
         /// </summary>
         public float RatingCount { get; set; }
+
+        /// <summary>
+        /// Sets to true if the recipe is liked by current user
+        /// </summary>
+        public bool LikedBy { get; set; }
     }
 }
